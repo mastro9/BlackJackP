@@ -30,6 +30,6 @@ FONT_SMALL      = pygame.font.SysFont(FONT_TYPE, 10)
 # BACKGROUND DEL TAVOLO
 
 POKER_BACKGROUND = pygame.transform.scale(
-    pygame.image.load("Resources/Icons/pokerBackground3.jpg"),
+    pygame.image.load("Resources/Icons/pokerBackground1.jpg"),
     (SCREEN_WIDTH, SCREEN_HEIGHT)
 )

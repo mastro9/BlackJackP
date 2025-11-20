@@ -303,38 +303,34 @@ def get_bets(players):
     for idx, p in enumerate(players):
         bet = ""
         bet_value = None
-        valid_bet = True   # per mostrare “ENTER A VALID BET”
+        valid_bet = True
 
-        # Se uno è a zero, dargli 1 come nel gioco originale
         if p.bank == 0:
             p.bank = 1
 
         while True:
             screen.blit(POKER_BACKGROUND, (0, 0))
 
-            draw_text(screen,f"Enter {p.name}'s bet  ({p.name}'s Bank = ${p.bank})",FONT_BOLD,ORANGE,HALF_WIDTH,HALF_HEIGHT - 50)
-            draw_text(screen,bet,FONT_BOLD,WHITE,HALF_WIDTH,HALF_HEIGHT)
-            if idx < len(players) - 1:
-                footer = "PRESS SPACE TO CONTINUE, OR ESC TO QUIT"
-            else:
-                footer = "PRESS SPACE TO START GAME"
+            draw_text(screen, f"Enter {p.name}'s bet  ({p.name}'s Bank = ${p.bank})",
+                      FONT_BOLD, ORANGE, HALF_WIDTH, HALF_HEIGHT - 50)
+            draw_text(screen, bet, FONT_BOLD, WHITE, HALF_WIDTH, HALF_HEIGHT)
 
-            draw_text(screen,footer,FONT_BOLD,ORANGE,HALF_WIDTH,HALF_HEIGHT + 50)
+            footer = ("PRESS SPACE TO CONTINUE" if idx < len(players) - 1
+                      else "PRESS SPACE TO START GAME")
+            draw_text(screen, footer, FONT_BOLD, ORANGE, HALF_WIDTH, HALF_HEIGHT + 50)
 
-            # messaggio ERRORE se bet > bank
             if not valid_bet:
-                draw_text(screen,"ENTER A VALID BET",FONT_BOLD,RED,HALF_WIDTH,HALF_HEIGHT + 100)
+                draw_text(screen, "ENTER A VALID BET",
+                          FONT_BOLD, RED, HALF_WIDTH, HALF_HEIGHT + 100)
+
             pygame.display.update()
 
-            # EVENTI
             for event in pygame.event.get():
 
-                # chiusura finestra
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
-                # ESC → exit
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
@@ -342,42 +338,38 @@ def get_bets(players):
                 if event.type == pygame.KEYDOWN:
                     key = pygame.key.name(event.key)
 
-                    # aggiunta numero
+                    # numeri
                     if key in valid_nums and len(bet) < 4:
                         bet += key
-                        valid_bet = True  # rimuovi errore
+                        valid_bet = True
 
                     # cancella
                     elif event.key == pygame.K_BACKSPACE:
                         bet = ""
-                        bet_value = None
                         valid_bet = True
 
                     # conferma
                     elif event.key == pygame.K_SPACE:
-                        if bet == "":  # come originale: stringa vuota → 0
-                            bet = "0"
+
+                        # NON permettere puntata vuota
+                        if bet == "":
+                            valid_bet = False
+                            continue
 
                         bet_value = int(bet)
 
-                        if 0 <= bet_value <= p.bank:
-                            # valida
+                        # minimo 1
+                        if 1 <= bet_value <= p.bank:
                             p.bet = bet_value
                             p.bank -= bet_value
-                            return_to_next = True
-                        else:
-                            # invalida
-                            valid_bet = False
-                            return_to_next = False
-
-                        # Se la puntata è valida → esci dal loop
-                        if return_to_next:
+                            valid_bet = True
                             break
+                        else:
+                            valid_bet = False
 
-            # esci dallo “while True” per il player
             if bet_value is not None and valid_bet:
                 break
-
+            
 def show_end_round(players, dealer, game_over=False):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Round Over")

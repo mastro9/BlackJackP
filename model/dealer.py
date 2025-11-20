@@ -5,18 +5,15 @@ from .deck import Deck
 
 
 class Dealer:
-
     def __init__(self):
         self.deck = Deck()
         self.deck.createDeck()
         self.deck.shuffleDeck()
-
         self.hand = []
         self.count = 0
-
-        # posizione grafica
         self.x = HALF_WIDTH
         self.y = 100
+        self.revealed = False
 
     def createDealerHand(self):
         for _ in range(2):
@@ -61,7 +58,9 @@ class Dealer:
         start_y = self.y - card_h / 2
 
         for i, card in enumerate(self.hand):
-            if i == 1 and not getattr(self, "revealed", False):
+
+            # Se la carta è la seconda e NON è ancora rivelata →
+            if i == 1 and not self.revealed:
                 img = load_image("Resources/Cards/Back/red_back.png", (card_w, card_h))
             else:
                 path = f"Resources/Cards/{card.suit}/{card.label}.png"

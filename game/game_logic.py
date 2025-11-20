@@ -11,8 +11,22 @@ def draw_table(screen, dealer, players):
     dealer.drawHand(screen)
     for p in players:
         p.drawHand(screen)
+    # --- TIGER EYE (come nel gioco originale) ---
+    tiger = pygame.image.load("Resources/Icons/tigerEye.png")
 
+    # riduzione a metà della dimensione
+    tiger_w = round(tiger.get_width() * 0.5)
+    tiger_h = round(tiger.get_height() * 0.5)
+
+    tiger = pygame.transform.scale(tiger, (tiger_w, tiger_h))
+
+    # trasparenza per l'effetto "velato"
+    tiger.set_alpha(60)
+
+    # centrato sul tavolo
+    screen.blit(tiger,(HALF_WIDTH - tiger_w / 2, HALF_HEIGHT - tiger_h / 2))
     pygame.display.update()
+
 
 # function to create the hands of the dealer and all the players
 def deal_initial_cards(players, dealer):
@@ -72,20 +86,19 @@ def resolve_round(players, dealer):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
     # --- FASE 1: Dealer scopre la carta coperta ---
+    dealer.reveal_all_cards()
     draw_table(screen, dealer, players)
     pygame.time.delay(700)  # piccolo effetto
 
     # --- CONTROLLO: ci sono giocatori ancora "vivi"? ---
     # giocatori non bust e con una bet ancora attiva
-    active_players = [p for p in players if not p.bust and p.bet > 0]
+    active_players = [p for p in players if not p.bust]
 
     # se tutti hanno sballato (o non hanno più puntata), il banco vince di default
     if not active_players:
-        # rivela la carta coperta
-        dealer.reveal_all_cards()
         
         draw_table(screen, dealer, players)
-        pygame.time.delay(2000)
+        pygame.time.delay(3000)
 
         return
 
@@ -95,7 +108,7 @@ def resolve_round(players, dealer):
 
         # mostra aggiornamento
         draw_table(screen, dealer, players)
-        pygame.time.delay(2000)  # tempo per "vedere" la carta
+        pygame.time.delay(3000)  # tempo per "vedere" la carta
 
     # --- FASE 3: Dealer bust? ---
     if dealer.count > 21:
