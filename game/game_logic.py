@@ -61,6 +61,7 @@ def play_turns(players, dealer):
 
         draw_table(screen, dealer, players)
 
+        #richiesta se hit o pass
         choice = player.askChoice()
 
         # HIT
