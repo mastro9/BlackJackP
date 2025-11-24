@@ -33,3 +33,7 @@ POKER_BACKGROUND = pygame.transform.scale(
     pygame.image.load("Resources/Icons/pokerBackground1.jpg"),
     (SCREEN_WIDTH, SCREEN_HEIGHT)
 )
+POKER_BACKGROUND_GAME = pygame.transform.scale(
+    pygame.image.load("Resources/Icons/pokerBackground3.jpg"),
+    (SCREEN_WIDTH, SCREEN_HEIGHT)
+)

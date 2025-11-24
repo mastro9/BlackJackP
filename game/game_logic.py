@@ -6,7 +6,7 @@ from utils.helpers import draw_text
 
 # function to draw the screen every time an action is conducted in the playing of the game
 def draw_table(screen, dealer, players):
-    screen.blit(POKER_BACKGROUND, (0, 0))
+    screen.blit(POKER_BACKGROUND_GAME, (0, 0))
 
     dealer.drawHand(screen)
     for p in players:
