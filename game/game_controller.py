@@ -118,6 +118,7 @@ class GameController:
         for p in self.players:
             p.resetState()
 
+    #vinci con 200$
     def check_final_winner(self):
         for p in self.players:
             if p.bank >= 200:
