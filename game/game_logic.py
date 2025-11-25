@@ -62,7 +62,11 @@ def play_turns(players, dealer):
         draw_table(screen, dealer, players)
 
         #richiesta se hit o pass
-        choice = player.askChoice()
+        if player.is_human:
+            choice = player.askChoice()
+        else:
+            choice = player.autoChoice(dealer.hand[0].value)
+            pygame.time.wait(700)  # piccola pausa per vedere l’azione a schermo
 
         # HIT
         if choice == 1:
@@ -76,7 +80,11 @@ def play_turns(players, dealer):
                     player.resetBet()
                     break
 
-                choice = player.askChoice()
+                if player.is_human:
+                    choice = player.askChoice()
+                else:
+                    choice = player.autoChoice(dealer.hand[0].value)
+                    pygame.time.wait(700)
                 if choice != 1:
                     break
 

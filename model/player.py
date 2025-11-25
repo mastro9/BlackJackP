@@ -22,6 +22,9 @@ class Player:
         self.y = 0
         self.currentTurn = False
 
+        self.is_human = False
+
+
     def askChoice(self):
         """Ritorna 1 = HIT, 2 = PASS."""
         while True:
@@ -93,7 +96,7 @@ class Player:
                   self.x, self.y + card_h * 0.75)
 
         # messaggi grafici
-        if self.currentTurn:
+        if self.currentTurn and self.is_human:
             draw_text(surface, "Hit(H) or Pass(P)", FONT_NORMAL, name_color,
                       self.x, self.y - card_h * 0.75)
 
@@ -110,3 +113,25 @@ class Player:
         self.blackjack = False
         self.resetBet()
         self.resetHandAndCount()
+
+    def autoChoice(self, dealer_card_value):
+        """ Restituisce 1 = HIT, 0 = PASS """
+
+        # Esempio: strategia di base semplificata
+        # Se il bot ha <= 11, sempre HIT
+        if self.count <= 11:
+            return 1
+
+        # Se dealer mostra una carta forte (7–A) e il bot ha < 17 → HIT
+        if dealer_card_value >= 7 and self.count < 17:
+            return 1
+
+        # Se dealer ha carta debole (2–6) e il bot ha >= 12 → PASS
+        if dealer_card_value <= 6 and self.count >= 12:
+            return 0
+
+        # Default: PASS sopra 16
+        if self.count >= 17:
+            return 0
+
+        return 1

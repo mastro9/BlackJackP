@@ -30,6 +30,7 @@ class GameController:
         # --- GIOCATORE UMANO ---
         human = get_player_name()                     # la tua funzione ritorna una lista
         self.players.append(human)
+        human.is_human = True
 
         # --- ALTRI 3 BOT ---
         for i in range(1, 4):
