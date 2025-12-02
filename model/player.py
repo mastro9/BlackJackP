@@ -2,7 +2,7 @@ import pygame
 import pickle
 import os
 import sys
-from utils.constants import WHITE, BLUE, FONT_NORMAL, ORANGE, FONT_BOLD
+from utils.constants import WHITE, BLUE, FONT_NORMAL
 from utils.helpers import draw_text, load_image
 
 # --- CARICAMENTO CERVELLO AI ---
@@ -103,43 +103,56 @@ class Player:
         else:
             return None, 0, (200, 200, 200)
 
-    # --- NUOVA FUNZIONE MANCANTE: DISEGNO BADGE ---
-    def draw_ai_badge(self, surface, text, x, y, color):
+    # --- DISEGNO BADGE ---
+    def draw_ai_badge(self, surface, mossa, prob, x, y, color):
+        # 1. Configurazione Font (Due dimensioni diverse)
         try:
-            font = pygame.font.SysFont("Arial", 16, bold=True)
+            font_title = pygame.font.SysFont("Arial", 16, bold=True) # Per la mossa
+            font_sub = pygame.font.SysFont("Arial", 12)             # Per la percentuale
         except:
-            font = pygame.font.Font(None, 16)
-            
-        text_surf = font.render(text, True, (255, 255, 255))
-        
-        padding_x = 20
-        padding_y = 10
-        box_width = text_surf.get_width() + padding_x
-        box_height = text_surf.get_height() + padding_y
-        
-        # IMPORTANTE: Convertiamo in int per evitare crash
+            font_title = pygame.font.Font(None, 20)
+            font_sub = pygame.font.Font(None, 16)
+
+        # 2. Creazione delle Scritte (Surface)
+        # Riga 1: La Mossa
+        text_mossa = font_title.render(f"Advice: {mossa}", True, (255, 255, 255))
+        # Riga 2: La Probabilità (in grigio chiaro per contrasto)
+        text_prob = font_sub.render(f"Win rate: {prob:.1f}%", True, (220, 220, 220))
+
+        # 3. Calcolo Dimensioni del Box
+        # Larghezza: prende la scritta più lunga + un po' di margine
+        box_width = max(text_mossa.get_width(), text_prob.get_width()) + 20
+        # Altezza: somma delle due scritte + spazi
+        box_height = text_mossa.get_height() + text_prob.get_height() + 15
+
+        # 4. Creazione Rettangolo Sfondo
         center_x = int(x)
         center_y = int(y)
-        
         box_rect = pygame.Rect(0, 0, box_width, box_height)
         box_rect.center = (center_x, center_y)
-        
-        # Sfondo scuro trasparente
+
+        # 5. Disegno Sfondo Scuro
         s = pygame.Surface((box_width, box_height))
-        s.set_alpha(200)
+        s.set_alpha(210) # Leggermente più opaco
         s.fill((0, 0, 0))
         surface.blit(s, box_rect.topleft)
-        
-        # Bordo colorato (safe mode)
+
+        # 6. Disegno Bordo Colorato
         try:
-            pygame.draw.rect(surface, color, box_rect, width=2, border_radius=10)
+            pygame.draw.rect(surface, color, box_rect, width=2, border_radius=8)
         except TypeError:
             pygame.draw.rect(surface, color, box_rect, width=2)
-        
-        text_rect = text_surf.get_rect(center=box_rect.center)
-        surface.blit(text_surf, text_rect)
 
-    # --- DISEGNO MANO (Aggiornato) ---
+        # 7. Posizionamento e Disegno del Testo
+        # Centra la prima riga nella parte alta del box
+        rect_mossa = text_mossa.get_rect(centerx=box_rect.centerx, top=box_rect.top + 5)
+        surface.blit(text_mossa, rect_mossa)
+
+        # Centra la seconda riga subito sotto la prima
+        rect_prob = text_prob.get_rect(centerx=box_rect.centerx, top=rect_mossa.bottom + 2)
+        surface.blit(text_prob, rect_prob)
+
+    # --- DISEGNO MANO  ---
     def drawHand(self, surface, dealer_card=None):
         card_w, card_h = 78, 120
         gap = 20
@@ -161,12 +174,15 @@ class Player:
             draw_text(surface, "Hit(H) or Pass(P)", FONT_NORMAL, name_color,
                       self.x, self.y - card_h * 0.75)
 
-            # Chiamata al badge AI
+            # --- CHIAMATA AI MODIFICATA ---
             if dealer_card and q_table:
+                # Otteniamo i dati grezzi
                 mossa, prob, colore = self.get_ai_advice(dealer_card)
+                
                 if mossa:
-                    badge_text = f"AI: {mossa} ({prob:.1f}%)"
-                    self.draw_ai_badge(surface, badge_text, self.x, self.y - 130, colore)
+                    # Passiamo mossa e probabilità separatamente
+                    # Nota: Ho alzato la posizione a -140 perché il box è più grande
+                    self.draw_ai_badge(surface, mossa, prob, self.x, self.y - 140, colore)
 
         if self.bust:
             bust = load_image("Resources/Icons/bust.png")
