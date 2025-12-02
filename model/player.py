@@ -1,14 +1,12 @@
 import pygame
-import pickle  # <--- AI MOD: Import necessario
-import os      # <--- AI MOD: Per trovare il file
-from utils.constants import WHITE, BLUE, FONT_NORMAL, ORANGE, FONT_BOLD # Assicurati di avere un colore/font visibile
-from utils.helpers import draw_text, load_image
+import pickle
+import os
 import sys
+from utils.constants import WHITE, BLUE, FONT_NORMAL, ORANGE, FONT_BOLD
+from utils.helpers import draw_text, load_image
 
-# --- AI MOD: CARICAMENTO CERVELLO ---
-# Cerchiamo di caricare la Q-Table una volta sola quando importiamo il modulo
+# --- CARICAMENTO CERVELLO AI ---
 q_table = {}
-# Percorso relativo: assumiamo che la cartella 'training' sia nella root del progetto
 path_to_brain = os.path.join("training", "blackjack_qtable.pkl")
 
 try:
@@ -16,37 +14,30 @@ try:
         q_table = pickle.load(f)
     print(f"AI: Cervello caricato da {path_to_brain}")
 except FileNotFoundError:
-    print(f"AI: ATTENZIONE! File {path_to_brain} non trovato. L'AI non darà consigli.")
-# ------------------------------------
+    print(f"AI: ATTENZIONE! File {path_to_brain} non trovato.")
+# -------------------------------
 
 class Player:
 
     def __init__(self, name):
         self.name = name
-
         self.hand = []
         self.count = 0
-
         self.blackjack = False
         self.bust = False
-
         self.bank = 100
         self.bet = 0
-
         self.x = 0
         self.y = 0
         self.currentTurn = False
-
         self.is_human = False
 
     def askChoice(self):
-        """Ritorna 1 = HIT, 2 = PASS."""
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_h: return 1
                     if event.key == pygame.K_p: return 2
@@ -78,8 +69,77 @@ class Player:
     def resetHandAndCount(self):
         self.hand = []
         self.count = 0
+    
+    def resetState(self):
+        self.bust = False
+        self.blackjack = False
+        self.resetBet()
+        self.resetHandAndCount()
 
-    # --- AI MOD: Aggiunto argomento 'dealer_card' opzionale ---
+    def autoChoice(self, dealer_card_value):
+        if self.count <= 11: return 1
+        if dealer_card_value >= 7 and self.count < 17: return 1
+        if dealer_card_value <= 6 and self.count >= 12: return 0
+        if self.count >= 17: return 0
+        return 1
+
+    # --- NUOVA FUNZIONE: LOGICA AI ---
+    def get_ai_advice(self, dealer_card):
+        player_sum = self.count
+        d_val = dealer_card.value
+        raw_sum = sum(c.value for c in self.hand)
+        usable_ace = (self.count > raw_sum)
+        state = (player_sum, d_val, usable_ace)
+
+        if state in q_table:
+            valori = q_table[state]
+            prob_stand = (valori[0] + 1) / 2 * 100
+            prob_hit = (valori[1] + 1) / 2 * 100
+            
+            if prob_hit > prob_stand:
+                return "HIT", prob_hit, (50, 255, 50) # Verde
+            else:
+                return "STAND", prob_stand, (255, 80, 80) # Rosso
+        else:
+            return None, 0, (200, 200, 200)
+
+    # --- NUOVA FUNZIONE MANCANTE: DISEGNO BADGE ---
+    def draw_ai_badge(self, surface, text, x, y, color):
+        try:
+            font = pygame.font.SysFont("Arial", 16, bold=True)
+        except:
+            font = pygame.font.Font(None, 16)
+            
+        text_surf = font.render(text, True, (255, 255, 255))
+        
+        padding_x = 20
+        padding_y = 10
+        box_width = text_surf.get_width() + padding_x
+        box_height = text_surf.get_height() + padding_y
+        
+        # IMPORTANTE: Convertiamo in int per evitare crash
+        center_x = int(x)
+        center_y = int(y)
+        
+        box_rect = pygame.Rect(0, 0, box_width, box_height)
+        box_rect.center = (center_x, center_y)
+        
+        # Sfondo scuro trasparente
+        s = pygame.Surface((box_width, box_height))
+        s.set_alpha(200)
+        s.fill((0, 0, 0))
+        surface.blit(s, box_rect.topleft)
+        
+        # Bordo colorato (safe mode)
+        try:
+            pygame.draw.rect(surface, color, box_rect, width=2, border_radius=10)
+        except TypeError:
+            pygame.draw.rect(surface, color, box_rect, width=2)
+        
+        text_rect = text_surf.get_rect(center=box_rect.center)
+        surface.blit(text_surf, text_rect)
+
+    # --- DISEGNO MANO (Aggiornato) ---
     def drawHand(self, surface, dealer_card=None):
         card_w, card_h = 78, 120
         gap = 20
@@ -93,24 +153,20 @@ class Player:
             surface.blit(img, (start_x, start_y))
             start_x += gap
 
-        # effetto turno
         name_color = BLUE if self.currentTurn else WHITE
-
-        # nome + soldi
         draw_text(surface, f"{self.name}   ${self.bank}", FONT_NORMAL, name_color,
                   self.x, self.y + card_h * 0.75)
 
-        # messaggi grafici
         if self.currentTurn and self.is_human:
             draw_text(surface, "Hit(H) or Pass(P)", FONT_NORMAL, name_color,
                       self.x, self.y - card_h * 0.75)
 
-            # --- AI MOD: VISUALIZZAZIONE SUGGERIMENTO ---
+            # Chiamata al badge AI
             if dealer_card and q_table:
-                suggerimento = self.get_ai_advice(dealer_card)
-                # Disegna il suggerimento un po' sopra le carte (o dove preferisci)
-                draw_text(surface, suggerimento, FONT_BOLD, ORANGE, self.x, self.y - card_h - 10)
-            # -------------------------------------------
+                mossa, prob, colore = self.get_ai_advice(dealer_card)
+                if mossa:
+                    badge_text = f"AI: {mossa} ({prob:.1f}%)"
+                    self.draw_ai_badge(surface, badge_text, self.x, self.y - 130, colore)
 
         if self.bust:
             bust = load_image("Resources/Icons/bust.png")
@@ -119,56 +175,3 @@ class Player:
         if self.blackjack:
             bj = load_image("Resources/Icons/blackjack.png")
             surface.blit(bj, (self.x - bj.get_width()/2, self.y - bj.get_height()/2))
-
-    def resetState(self):
-        self.bust = False
-        self.blackjack = False
-        self.resetBet()
-        self.resetHandAndCount()
-
-    def autoChoice(self, dealer_card_value):
-        # ... (il tuo codice esistente per i bot) ...
-        if self.count <= 11: return 1
-        if dealer_card_value >= 7 and self.count < 17: return 1
-        if dealer_card_value <= 6 and self.count >= 12: return 0
-        if self.count >= 17: return 0
-        return 1
-
-    # --- AI MOD: LOGICA TRADUZIONE ---
-    def get_ai_advice(self, dealer_card):
-        """
-        Trasforma le carte attuali nella tupla (Somma, Dealer, Asso)
-        e interroga la Q-Table.
-        """
-        # 1. Somma Giocatore
-        player_sum = self.count
-
-        # 2. Carta Dealer (Valore numerico)
-        d_val = dealer_card.value
-        # Nota: Nel tuo deck.py J,Q,K valgono già 10 e A vale 1. È perfetto.
-        
-        # 3. Asso Usabile
-        # Logica: se la somma calcolata (self.count) è maggiore della somma "grezza"
-        # delle carte (dove Asso vale 1), significa che stiamo usando un Asso come 11.
-        raw_sum = sum(c.value for c in self.hand)
-        usable_ace = (self.count > raw_sum)
-
-        # Creiamo lo stato
-        state = (player_sum, d_val, usable_ace)
-
-        # Interroghiamo la tabella
-        if state in q_table:
-            valori = q_table[state]
-            # valori[0] = Stand, valori[1] = Hit
-            prob_stand = valori[0]
-            prob_hit = valori[1]
-
-            print("hit", prob_hit,"stand",prob_stand)
-            
-            migliore = "CARTA (Hit)" if prob_hit > prob_stand else "STARE (Stand)"
-            
-            # (Opzionale) Calcolo confidenza
-            # return f"AI: {migliore} ({max(prob_hit, prob_stand):.2f})"
-            return f"AI Suggerisce: {migliore}"
-        else:
-            return "AI: ???"
