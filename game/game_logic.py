@@ -9,8 +9,13 @@ def draw_table(screen, dealer, players):
     screen.blit(POKER_BACKGROUND_GAME, (0, 0))
 
     dealer.drawHand(screen)
+
+    # --- AI MOD: Recuperiamo la carta scoperta del dealer ---
+    # La mano del dealer ha 2 carte, la prima è quella scoperta (di solito)
+    dealer_up_card = dealer.hand[0] if dealer.hand else None
     for p in players:
-        p.drawHand(screen)
+        # Passiamo la carta del dealer alla funzione di disegno
+        p.drawHand(screen, dealer_up_card)
     # --- TIGER EYE (come nel gioco originale) ---
     tiger = pygame.image.load("Resources/Icons/tigerEye.png")
 

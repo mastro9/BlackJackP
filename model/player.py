@@ -1,8 +1,23 @@
 import pygame
-from utils.constants import WHITE, BLUE, FONT_NORMAL
+import pickle  # <--- AI MOD: Import necessario
+import os      # <--- AI MOD: Per trovare il file
+from utils.constants import WHITE, BLUE, FONT_NORMAL, ORANGE, FONT_BOLD # Assicurati di avere un colore/font visibile
 from utils.helpers import draw_text, load_image
 import sys
 
+# --- AI MOD: CARICAMENTO CERVELLO ---
+# Cerchiamo di caricare la Q-Table una volta sola quando importiamo il modulo
+q_table = {}
+# Percorso relativo: assumiamo che la cartella 'training' sia nella root del progetto
+path_to_brain = os.path.join("training", "blackjack_qtable.pkl")
+
+try:
+    with open(path_to_brain, "rb") as f:
+        q_table = pickle.load(f)
+    print(f"AI: Cervello caricato da {path_to_brain}")
+except FileNotFoundError:
+    print(f"AI: ATTENZIONE! File {path_to_brain} non trovato. L'AI non darà consigli.")
+# ------------------------------------
 
 class Player:
 
@@ -24,24 +39,17 @@ class Player:
 
         self.is_human = False
 
-
     def askChoice(self):
         """Ritorna 1 = HIT, 2 = PASS."""
         while True:
             for event in pygame.event.get():
-
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
 
                 if event.type == pygame.KEYDOWN:
-
-                    if event.key == pygame.K_h:
-                        return 1
-
-                    if event.key == pygame.K_p:
-                        return 2
-
+                    if event.key == pygame.K_h: return 1
+                    if event.key == pygame.K_p: return 2
                     if event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
@@ -50,8 +58,6 @@ class Player:
         self.hand.append(card)
         self.countCards()
     
-
-    # this method considers all aces in a player's hand to give them the closest count under 21
     def countCards(self):
         self.count = 0
         for card in self.hand:
@@ -63,7 +69,6 @@ class Player:
                     self.count -= 10
                     break
 
-
     def applyBet(self, factor):
         self.bank += self.bet * factor
 
@@ -74,7 +79,8 @@ class Player:
         self.hand = []
         self.count = 0
 
-    def drawHand(self, surface):
+    # --- AI MOD: Aggiunto argomento 'dealer_card' opzionale ---
+    def drawHand(self, surface, dealer_card=None):
         card_w, card_h = 78, 120
         gap = 20
 
@@ -84,7 +90,6 @@ class Player:
         for card in self.hand:
             path = f"Resources/Cards/{card.suit}/{card.label}.png"
             img = load_image(path, (card_w, card_h))
-
             surface.blit(img, (start_x, start_y))
             start_x += gap
 
@@ -99,6 +104,13 @@ class Player:
         if self.currentTurn and self.is_human:
             draw_text(surface, "Hit(H) or Pass(P)", FONT_NORMAL, name_color,
                       self.x, self.y - card_h * 0.75)
+
+            # --- AI MOD: VISUALIZZAZIONE SUGGERIMENTO ---
+            if dealer_card and q_table:
+                suggerimento = self.get_ai_advice(dealer_card)
+                # Disegna il suggerimento un po' sopra le carte (o dove preferisci)
+                draw_text(surface, suggerimento, FONT_BOLD, ORANGE, self.x, self.y - card_h - 10)
+            # -------------------------------------------
 
         if self.bust:
             bust = load_image("Resources/Icons/bust.png")
@@ -115,23 +127,48 @@ class Player:
         self.resetHandAndCount()
 
     def autoChoice(self, dealer_card_value):
-        """ Restituisce 1 = HIT, 0 = PASS """
-
-        # Esempio: strategia di base semplificata
-        # Se il bot ha <= 11, sempre HIT
-        if self.count <= 11:
-            return 1
-
-        # Se dealer mostra una carta forte (7–A) e il bot ha < 17 → HIT
-        if dealer_card_value >= 7 and self.count < 17:
-            return 1
-
-        # Se dealer ha carta debole (2–6) e il bot ha >= 12 → PASS
-        if dealer_card_value <= 6 and self.count >= 12:
-            return 0
-
-        # Default: PASS sopra 16
-        if self.count >= 17:
-            return 0
-
+        # ... (il tuo codice esistente per i bot) ...
+        if self.count <= 11: return 1
+        if dealer_card_value >= 7 and self.count < 17: return 1
+        if dealer_card_value <= 6 and self.count >= 12: return 0
+        if self.count >= 17: return 0
         return 1
+
+    # --- AI MOD: LOGICA TRADUZIONE ---
+    def get_ai_advice(self, dealer_card):
+        """
+        Trasforma le carte attuali nella tupla (Somma, Dealer, Asso)
+        e interroga la Q-Table.
+        """
+        # 1. Somma Giocatore
+        player_sum = self.count
+
+        # 2. Carta Dealer (Valore numerico)
+        d_val = dealer_card.value
+        # Nota: Nel tuo deck.py J,Q,K valgono già 10 e A vale 1. È perfetto.
+        
+        # 3. Asso Usabile
+        # Logica: se la somma calcolata (self.count) è maggiore della somma "grezza"
+        # delle carte (dove Asso vale 1), significa che stiamo usando un Asso come 11.
+        raw_sum = sum(c.value for c in self.hand)
+        usable_ace = (self.count > raw_sum)
+
+        # Creiamo lo stato
+        state = (player_sum, d_val, usable_ace)
+
+        # Interroghiamo la tabella
+        if state in q_table:
+            valori = q_table[state]
+            # valori[0] = Stand, valori[1] = Hit
+            prob_stand = valori[0]
+            prob_hit = valori[1]
+
+            print("hit", prob_hit,"stand",prob_stand)
+            
+            migliore = "CARTA (Hit)" if prob_hit > prob_stand else "STARE (Stand)"
+            
+            # (Opzionale) Calcolo confidenza
+            # return f"AI: {migliore} ({max(prob_hit, prob_stand):.2f})"
+            return f"AI Suggerisce: {migliore}"
+        else:
+            return "AI: ???"
