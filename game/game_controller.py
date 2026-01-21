@@ -3,7 +3,7 @@ import random
 import sys # Necessario per sys.exit() nelle funzioni in fondo
 
 # Import non modificati
-from model.player import Player
+from model.playerNN import Player
 from model.dealer import Dealer
 from game.game_logic import (
     deal_initial_cards,
