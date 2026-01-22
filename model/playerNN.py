@@ -143,24 +143,30 @@ class Player:
         if prob_hit > prob_stand:
             return "HIT", prob_hit, (50, 255, 50) # Verde
         else:
-            return "STAND", prob_stand, (255, 80, 80) # Rosso
+            return "PASS", prob_stand, (255, 80, 80) # Rosso
 
     # --- DISEGNO BADGE (Usa la nuova funzione prediction) ---
     def get_ai_advice(self, dealer_card):
         # Questa funzione serve solo per compatibilità col vecchio codice grafico
         return self.get_ai_prediction(dealer_card.value)
 
-    def draw_ai_badge(self, surface, text, x, y, color):
+    def draw_ai_badge(self, surface, mossa, prob, x, y, color):
         try:
-            font = pygame.font.SysFont("Arial", 16, bold=True)
+            font_title = pygame.font.SysFont("Arial", 16, bold=True)
+            font_sub = pygame.font.SysFont("Arial", 12) 
         except:
-            font = pygame.font.Font(None, 16)
+            font_title = pygame.font.Font(None, 16)
+            font_sub = pygame.font.Font(None, 16)
             
-        text_surf = font.render(text, True, (255, 255, 255))
+        # Riga 1: La Mossa
+        text_mossa = font_title.render(f"NNLogic: {mossa}", True, (255, 255, 255))
+        # Riga 2: La Probabilità (in grigio chiaro per contrasto)
+        text_prob = font_sub.render(f"Win rate: {prob:.1f}%", True, (220, 220, 220))
+
         padding_x = 20
-        padding_y = 10
-        box_width = text_surf.get_width() + padding_x
-        box_height = text_surf.get_height() + padding_y
+        padding_y = 15
+        box_width = max(text_mossa.get_width(), text_prob.get_width()) + padding_x
+        box_height = text_mossa.get_height() + text_prob.get_height() + padding_y
         
         center_x = int(x)
         center_y = int(y)
@@ -178,8 +184,13 @@ class Player:
         except TypeError:
             pygame.draw.rect(surface, color, box_rect, width=2)
         
-        text_rect = text_surf.get_rect(center=box_rect.center)
-        surface.blit(text_surf, text_rect)
+         # Centra la prima riga nella parte alta del box
+        rect_mossa = text_mossa.get_rect(centerx=box_rect.centerx, top=box_rect.top + 5)
+        surface.blit(text_mossa, rect_mossa)
+
+        # Centra la seconda riga subito sotto la prima
+        rect_prob = text_prob.get_rect(centerx=box_rect.centerx, top=rect_mossa.bottom + 2)
+        surface.blit(text_prob, rect_prob)
 
     def drawHand(self, surface, dealer_card=None):
         card_w, card_h = 78, 120
@@ -206,9 +217,7 @@ class Player:
             if dealer_card:
                 mossa, prob, colore = self.get_ai_advice(dealer_card)
                 if mossa:
-                    # Mostra "AI: HIT (98.5%)"
-                    badge_text = f"NN: {mossa} ({prob:.1f}%)"
-                    self.draw_ai_badge(surface, badge_text, self.x, self.y - 130, colore)
+                    self.draw_ai_badge(surface, mossa, prob, self.x, self.y - 130, colore)
 
         if self.bust:
             bust = load_image("Resources/Icons/bust.png")

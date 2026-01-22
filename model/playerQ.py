@@ -99,7 +99,7 @@ class Player:
             if prob_hit > prob_stand:
                 return "HIT", prob_hit, (50, 255, 50) # Verde
             else:
-                return "STAND", prob_stand, (255, 80, 80) # Rosso
+                return "PASS", prob_stand, (255, 80, 80) # Rosso
         else:
             return None, 0, (200, 200, 200)
 
@@ -115,7 +115,7 @@ class Player:
 
         # 2. Creazione delle Scritte (Surface)
         # Riga 1: La Mossa
-        text_mossa = font_title.render(f"Advice: {mossa}", True, (255, 255, 255))
+        text_mossa = font_title.render(f"QLogic: {mossa}", True, (255, 255, 255))
         # Riga 2: La Probabilità (in grigio chiaro per contrasto)
         text_prob = font_sub.render(f"Win rate: {prob:.1f}%", True, (220, 220, 220))
 
