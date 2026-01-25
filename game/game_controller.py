@@ -192,12 +192,21 @@ def show_start_screen():
     # sfondo
     screen.blit(POKER_BACKGROUND, (0, 0))
 
-    # carica il logo come nel gioco originale
-    title_logo = pygame.image.load("Resources/Icons/titleBlitzEdition.png")
+    # Carica il logo
+    title_logo = pygame.image.load("Resources/Icons/logo.png")
+
+    #  Definisci le nuove dimensioni 
+    new_width = title_logo.get_width() // 2
+    new_height = title_logo.get_height() // 2
+
+    # Scala l'immagine 
+    title_logo = pygame.transform.smoothscale(title_logo, (new_width, new_height))
+
+    # Aggiorna le variabili delle dimensioni per il calcolo del centraggio
     logo_w = title_logo.get_width()
     logo_h = title_logo.get_height()
 
-    # disegna logo centrato
+    # Disegna il logo
     screen.blit(title_logo, (HALF_WIDTH - logo_w // 2, HALF_HEIGHT - logo_h // 2 - 25))
 
     # testo "premi spazio"
@@ -236,20 +245,17 @@ def show_instructions():
               "--> Everyone has $100 to start the game.",
               FONT_NORMAL, WHITE, HALF_WIDTH, 450)
     draw_text(screen,
-              "--> You can go bankrupt, but the game will always leave you with $1.",
+              "--> Bust = Dealer takes your bet    Blackjack = Earn 1.5x your bet",
               FONT_NORMAL, WHITE, HALF_WIDTH, 500)
     draw_text(screen,
-              "--> Bust = Dealer takes your bet    Blackjack = Earn 1.5x your bet",
+              "--> Closest to 21 = Earn 2x your bet, else the dealer wins.",
               FONT_NORMAL, WHITE, HALF_WIDTH, 550)
     draw_text(screen,
-              "--> Closest to 21 = Earn 2x your bet, else the dealer wins.",
+              "--> Tie with dealer (if highest under 21) = Get your bet back",
               FONT_NORMAL, WHITE, HALF_WIDTH, 600)
     draw_text(screen,
-              "--> Tie with dealer (if highest under 21) = Get your bet back",
-              FONT_NORMAL, WHITE, HALF_WIDTH, 650)
-    draw_text(screen,
               "--> Dealer Bust = Everyone still in the game earns 2x their bets.",
-              FONT_NORMAL, WHITE, HALF_WIDTH, 700)
+              FONT_NORMAL, WHITE, HALF_WIDTH, 650)
 
     pygame.display.update()
     wait_for_input()
@@ -323,19 +329,9 @@ def get_bet(players):
     bet_value = None
     valid_bet = True
 
-    # *** PUNTO CRITICO MODIFICATO ***
-    # Se il giocatore umano ha 0 o meno, non può scommettere.
-    # Questo è in contraddizione con la regola "the game will always leave you with $1".
-    # Se vuoi seguire la regola del $1 minimo, usa:
     if p.bank <= 0:
-        print(f"ATTENZIONE: {p.name} è in bancarotta, ma la regola dice che gli resta $1.")
-        # Se la regola del gioco è che resta sempre $1, assicurati che la logica di resolve_round lo faccia.
-        # Qui potremmo decidere di non permettere la puntata, o forzare una puntata minima di 1.
-        
-        # Se l'intenzione è che *non* può giocare se è a 0, allora gestiamo solo il caso di uscita.
-        # MA: La logica di rimozione in GameController gestisce già che p.bank > 0.
-        # Quindi se arriviamo qui, p.bank dovrebbe essere > 0.
-        pass # Non facciamo nulla qui, ci fidiamo della logica del GameController.
+        print(f"ATTENZIONE: {p.name} è in bancarotta.")
+        pass 
 
     while True:
         screen.blit(POKER_BACKGROUND, (0, 0))
@@ -371,6 +367,7 @@ def get_bet(players):
                 if key in valid_nums and len(bet) < 4:
                     bet += key
                     valid_bet = True
+                    bet_value = None
 
                 # cancella
                 elif event.key == pygame.K_BACKSPACE:
@@ -399,6 +396,7 @@ def get_bet(players):
                     else:
                         # La puntata non è valida (es. 0, > 100, o > bank)
                         valid_bet = False
+                        bet_value = None
 
         if bet_value is not None and valid_bet:
             break
