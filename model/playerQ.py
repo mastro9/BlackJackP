@@ -2,7 +2,7 @@ import pygame
 import pickle
 import os
 import sys
-from utils.constants import WHITE, BLUE, FONT_NORMAL
+from utils.constants import WHITE, GREEN, FONT_NORMAL
 from utils.helpers import draw_text, load_image
 
 # --- CARICAMENTO CERVELLO AI ---
@@ -166,7 +166,7 @@ class Player:
             surface.blit(img, (start_x, start_y))
             start_x += gap
 
-        name_color = BLUE if self.currentTurn else WHITE
+        name_color = GREEN if self.currentTurn else WHITE
         draw_text(surface, f"{self.name}   ${self.bank}", FONT_NORMAL, name_color,
                   self.x, self.y + card_h * 0.75)
 

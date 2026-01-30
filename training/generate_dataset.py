@@ -58,7 +58,7 @@ def play_dealer_fast(upcard):
 # ----------------------------------------
 # Simula HIT e STAND in un'unica passata
 # ----------------------------------------
-def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=150):
+def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=1000):
     hit_wins = 0
     stand_wins = 0
 
@@ -97,7 +97,7 @@ def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=150):
 # ----------------------------------------
 # Generatore dataset VELocissimo
 # ----------------------------------------
-def generate_dataset_fast(filename="blackjack_dataset.csv", samples=50000):
+def generate_dataset_fast(filename="training/blackjack_dataset.csv", samples=50000):
     with open(filename, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["player_total", "dealer_card", "soft", "win_prob", "best_move"])

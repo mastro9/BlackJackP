@@ -4,7 +4,7 @@ import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.constants import WHITE, BLUE, FONT_NORMAL, ORANGE, FONT_BOLD
+from utils.constants import WHITE, GREEN, FONT_NORMAL, ORANGE, FONT_BOLD
 from utils.helpers import draw_text, load_image
 
 # --- 1. DEFINIZIONE DEL CERVELLO (Copiata qui per sicurezza) ---
@@ -205,7 +205,7 @@ class Player:
             surface.blit(img, (start_x, start_y))
             start_x += gap
 
-        name_color = BLUE if self.currentTurn else WHITE
+        name_color = GREEN if self.currentTurn else WHITE
         draw_text(surface, f"{self.name}   ${self.bank}", FONT_NORMAL, name_color,
                   self.x, self.y + card_h * 0.75)
 

@@ -97,55 +97,55 @@ def play_turns(players, dealer):
 
 
 def resolve_round(players, dealer):
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
+    screen = pygame.display.get_surface() # Recupera la finestra attiva
+    
     # --- FASE 1: Dealer scopre la carta coperta ---
     dealer.reveal_all_cards()
     draw_table(screen, dealer, players)
-    pygame.time.delay(700)  # piccolo effetto
+    pygame.time.delay(1000) 
 
-    # --- CONTROLLO: ci sono giocatori ancora "vivi"? ---
-    # giocatori non bust e con una bet ancora attiva
-    active_players = [p for p in players if not p.bust]
-
-    # se tutti hanno sballato (o non hanno più puntata), il banco vince di default
-    if not active_players:
-        
-        draw_table(screen, dealer, players)
-        pygame.time.delay(3000)
-
-        return
-
-    # --- FASE 2: Dealer pesca fino a 17 ---
+    # --- FASE 2: Dealer pesca fino a 16 ---
     while dealer.count <= 16:
-        dealer.addCard()
-
-        # mostra aggiornamento
+        dealer.addCard() 
         draw_table(screen, dealer, players)
-        pygame.time.delay(3000)  # tempo per "vedere" la carta
+        pygame.time.delay(1000)
 
-    # --- FASE 3: Dealer bust? ---
+    # --- FASE 3: Calcolo Vincite e Messaggi Grafici ---
+    startY = 250 # Punto di partenza per i messaggi a video
+    
+    # Se il dealer sballa
     if dealer.count > 21:
+        draw_text(screen, "DEALER BUSTED!", FONT_SUBTITLE, RED, HALF_WIDTH, startY)
+        pygame.display.update()
+        pygame.time.delay(1000)
+        
         for p in players:
-            if p.bet > 0:
+            if not p.bust:
                 p.applyBet(2)
                 p.resetBet()
-        return
+                # Messaggio individuale opzionale
+                startY += 40
+                draw_text(screen, f"{p.name} wins 2x bet!", FONT_NORMAL, WHITE, HALF_WIDTH, startY)
+    
+    else:
+        # Confronto normale (Logica della tua compareCounts)
+        highest_count = max((p.count for p in players if not p.bust and not p.blackjack), default=0)
 
-    # --- FASE 4: confronto punteggi ---
-    highest = max((p.count for p in players if not p.bust and not p.blackjack), default=0)
-
-    for p in players:
-
-        # blackjack già pagato
-        if p.blackjack or p.bust:
-            continue
-
-        if p.count == highest and highest > dealer.count:
-            p.applyBet(2)
+        for p in players:
+            if p.bust or p.blackjack:
+                continue
+            
+            startY += 40
+            if p.count > dealer.count:
+                draw_text(screen, f"{p.name} won twice the bet!", FONT_NORMAL, GREEN, HALF_WIDTH, startY)
+                p.applyBet(2)
+            elif p.count == dealer.count:
+                draw_text(screen, f"{p.name} got the bet back.", FONT_NORMAL, WHITE, HALF_WIDTH, startY)
+                p.applyBet(1)
+            else:
+                draw_text(screen, f"Dealer took {p.name}'s bet.", FONT_NORMAL, RED, HALF_WIDTH, startY)
+            
             p.resetBet()
-        elif p.count == dealer.count:
-            p.applyBet(1)
-            p.resetBet()
-        else:
-            p.resetBet()
+
+    pygame.display.update()
+    pygame.time.delay(3000) # Pausa per leggere i risultati
