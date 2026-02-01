@@ -3,7 +3,7 @@ import csv
 from tqdm import tqdm
 
 # ----------------------------------------
-# Valore mano + rilevamento soft
+# Hand value + soft detection
 # ----------------------------------------
 def hand_value(cards):
     total = sum(cards)
@@ -17,27 +17,27 @@ def hand_value(cards):
     return total, soft
 
 # ----------------------------------------
-# Pesca carta (mazzo statistico infinito)
+# Draw card (infinite statistical deck)
 # ----------------------------------------
 def draw_card():
     v = random.randint(1, 13)
     return 11 if v == 1 else 10 if v >= 10 else v
 
 # ----------------------------------------
-# Dealer veloce (early exit)
+# Fast Dealer (early exit)
 # ----------------------------------------
 def play_dealer_fast(upcard):
     total = upcard + draw_card()
 
-    # gestiamo gli assi
+    # handle aces
     if upcard == 11 or total - upcard == 11:
         soft = True
     else:
         soft = False
 
-    # ottimizziamo: dealer pesca finché < 17
+    # optimization: dealer hits until < 17
     while True:
-        # Se total >= 17: fermati
+        # If total >= 17: stop
         if total > 17 or (total == 17 and not soft):
             break
 
@@ -56,7 +56,7 @@ def play_dealer_fast(upcard):
     return total
 
 # ----------------------------------------
-# Simula HIT e STAND in un'unica passata
+# Simulate HIT and STAND in a single pass
 # ----------------------------------------
 def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=1000):
     hit_wins = 0
@@ -69,21 +69,21 @@ def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=1000):
             stand_wins += 1
 
         # ---------- HIT ----------
-        # Pesca una carta
+        # Draw a card
         card = draw_card()
         t = player_total + card
         soft = player_soft
 
-        # aggiorna soft se Asso
+        # update soft if Ace
         if card == 11:
             soft = True
 
-        # Asso aggiustato
+        # Adjusted Ace
         if t > 21 and soft:
             t -= 10
             soft = False
 
-        # Bust = perdita immediata
+        # Bust = immediate loss
         if t <= 21:
             dealer_total_h = play_dealer_fast(dealer_up)
             if dealer_total_h > 21 or t > dealer_total_h:
@@ -95,7 +95,7 @@ def estimate_win_prob_fast(player_total, player_soft, dealer_up, N=1000):
     return p_hit, p_stand
 
 # ----------------------------------------
-# Generatore dataset VELocissimo
+# Very FAST Dataset Generator
 # ----------------------------------------
 def generate_dataset_fast(filename="training/blackjack_dataset.csv", samples=50000):
     with open(filename, "w", newline="") as f:
@@ -103,19 +103,19 @@ def generate_dataset_fast(filename="training/blackjack_dataset.csv", samples=500
         writer.writerow(["player_total", "dealer_card", "soft", "win_prob", "best_move"])
 
         for _ in tqdm(range(samples)):
-            # mano random veloce
+            # fast random hand
             c1, c2 = draw_card(), draw_card()
             total = c1 + c2
             soft = (c1 == 11 or c2 == 11)
 
-            # aggiusta se sballa
+            # adjust if bust
             if total > 21 and soft:
                 total -= 10
                 soft = False
 
             dealer_up = draw_card()
 
-            # stima veloce Monte Carlo
+            # fast Monte Carlo estimation
             p_hit, p_stand = estimate_win_prob_fast(total, soft, dealer_up)
 
             if p_hit > p_stand:
@@ -125,10 +125,10 @@ def generate_dataset_fast(filename="training/blackjack_dataset.csv", samples=500
                 best_move = 0
                 win_prob = p_stand
 
-            # salva riga
+            # save row
             writer.writerow([total, dealer_up, int(soft), win_prob, best_move])
 
-    print(f"Dataset generato: {filename}")
+    print(f"Dataset generated: {filename}")
 
 
 if __name__ == "__main__":

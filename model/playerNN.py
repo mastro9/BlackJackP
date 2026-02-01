@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from utils.constants import WHITE, GREEN, FONT_NORMAL, ORANGE, FONT_BOLD
 from utils.helpers import draw_text, load_image
 
-# --- 1. DEFINIZIONE DEL CERVELLO (Copiata qui per sicurezza) ---
+# --- 1. BRAIN DEFINITION ---
 class BlackjackNet(nn.Module):
     def __init__(self):
         super(BlackjackNet, self).__init__()
@@ -23,19 +23,19 @@ class BlackjackNet(nn.Module):
         action_logits = self.action_head(x)
         return win_prob, action_logits
 
-# --- 2. CARICAMENTO MODELLO ---
+# --- 2. MODEL LOADING ---
 MODEL_PATH = os.path.join("training", "blackjack_neural_net.pth")
 ai_model = BlackjackNet()
 ai_ready = False
 
 try:
-    # Carica i pesi addestrati
+    # Loads the trained weights
     ai_model.load_state_dict(torch.load(MODEL_PATH))
-    ai_model.eval() # Imposta in modalità valutazione (non training)
+    ai_model.eval() # Sets evaluation mode (not training)
     ai_ready = True
-    print(f"AI: Rete Neurale caricata correttamente da {MODEL_PATH}")
+    print(f"AI: Neural Network loaded successfully from {MODEL_PATH}")
 except Exception as e:
-    print(f"AI: Errore caricamento modello. Assicurati che il file .pth esista. {e}")
+    print(f"AI: Model loading error. Ensure the .pth file exists. {e}")
     ai_ready = False
 
 # -------------------------------------------------------------
@@ -76,7 +76,7 @@ class Player:
         self.count = 0
         for card in self.hand:
             self.count += card.value
-        # Gestione Assi
+        # Ace Management
         for card in self.hand:
             if card.label == "A":
                 self.count += 10
@@ -100,54 +100,53 @@ class Player:
         self.resetBet()
         self.resetHandAndCount()
 
-    # --- 3. CERVELLO PER I BOT ---
+    # --- 3. BRAIN FOR BOTS ---
     def autoChoice(self, dealer_card_value):
-        # Se l'AI non è pronta, usa una logica base di sicurezza
+        # If AI is not ready, use basic safety logic
         if not ai_ready:
             if self.count < 17: return 1
             return 0
             
-        # Usa la rete neurale per decidere
+        # Use the neural network to decide
         advice, _, _ = self.get_ai_prediction(dealer_card_value)
         if advice == "HIT":
             return 1
         else:
             return 0
 
-    # --- 4. PREVISIONE AI (Core Logic) ---
+    # --- 4. AI PREDICTION (Core Logic) ---
     def get_ai_prediction(self, dealer_val):
-        """Prepara i dati e interroga la rete neurale"""
+        """Prepares data and queries the neural network"""
         if not ai_ready:
             return None, 0, (100, 100, 100)
 
-        # 1. Calcola se la mano è "Soft" (ha un asso usabile come 11)
+        # 1. Calculate if the hand is "Soft" (has an Ace usable as 11)
         raw_sum = sum(c.value for c in self.hand)
         is_soft = 1.0 if self.count > raw_sum else 0.0
         
-        # 2. Prepara il tensore di input [PlayerTotal, DealerCard, Soft]
-        # PyTorch vuole float32
+        # 2. Prepare input tensor [PlayerTotal, DealerCard, Soft]
+        # PyTorch expects float32
         input_tensor = torch.tensor([[float(self.count), float(dealer_val), is_soft]])
 
-        # 3. Chiedi al modello
-        with torch.no_grad(): # Non calcolare gradiente, siamo in gioco
+        # 3. Ask the model
+        with torch.no_grad(): # Do not calculate gradients, we are in game
             win_prob, action_logits = ai_model(input_tensor)
         
-        # 4. Interpreta i risultati
-        # action_logits è [valore_stand, valore_hit]
-        # Usiamo Softmax per trasformarli in percentuali
+        # 4. Interpret results
+        # action_logits is [stand_value, hit_value]
+        # Use Softmax to transform them into percentages
         probs = F.softmax(action_logits, dim=1)
         prob_stand = probs[0][0].item() * 100
         prob_hit = probs[0][1].item() * 100
         
-        # Scegli l'azione migliore
+        # Choose the best action
         if prob_hit > prob_stand:
-            return "HIT", prob_hit, (50, 255, 50) # Verde
+            return "HIT", prob_hit, (50, 255, 50) # Green
         else:
-            return "PASS", prob_stand, (255, 80, 80) # Rosso
+            return "PASS", prob_stand, (255, 80, 80) # Red
 
-    # --- DISEGNO BADGE (Usa la nuova funzione prediction) ---
+    # --- BADGE DRAWING  ---
     def get_ai_advice(self, dealer_card):
-        # Questa funzione serve solo per compatibilità col vecchio codice grafico
         return self.get_ai_prediction(dealer_card.value)
 
     def draw_ai_badge(self, surface, mossa, prob, x, y, color):
@@ -158,9 +157,9 @@ class Player:
             font_title = pygame.font.Font(None, 16)
             font_sub = pygame.font.Font(None, 16)
             
-        # Riga 1: La Mossa
+        # Row 1: The Move
         text_mossa = font_title.render(f"NNLogic: {mossa}", True, (255, 255, 255))
-        # Riga 2: La Probabilità (in grigio chiaro per contrasto)
+        # Row 2: The Probability (in light gray for contrast)
         text_prob = font_sub.render(f"Win rate: {prob:.1f}%", True, (220, 220, 220))
 
         padding_x = 20
@@ -184,11 +183,11 @@ class Player:
         except TypeError:
             pygame.draw.rect(surface, color, box_rect, width=2)
         
-         # Centra la prima riga nella parte alta del box
+         # Center the first row at the top of the box
         rect_mossa = text_mossa.get_rect(centerx=box_rect.centerx, top=box_rect.top + 5)
         surface.blit(text_mossa, rect_mossa)
 
-        # Centra la seconda riga subito sotto la prima
+        # Center the second row immediately below the first
         rect_prob = text_prob.get_rect(centerx=box_rect.centerx, top=rect_mossa.bottom + 2)
         surface.blit(text_prob, rect_prob)
 
@@ -213,7 +212,7 @@ class Player:
             draw_text(surface, "Hit(H) or Pass(P)", FONT_NORMAL, name_color,
                       self.x, self.y - card_h * 0.75)
 
-            # Badge AI (Visibile solo all'umano)
+            # AI Badge (Visible only to human)
             if dealer_card:
                 mossa, prob, colore = self.get_ai_advice(dealer_card)
                 if mossa:

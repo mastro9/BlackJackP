@@ -2,32 +2,32 @@ import random
 
 class BlackjackEnv:
     def __init__(self):
-        # Valori delle carte: J, Q, K valgono 10. Asso vale 11 (gestito dopo)
+        # Card values: J, Q, K are worth 10. Ace is worth 11 (handled later)
         self.deck_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
 
     def _pesca_carta(self):
         return random.choice(self.deck_values)
 
     def _calcola_punteggio(self, mano):
-        # Logica per gestire l'Asso
+        # Logic to handle the Ace
         punteggio = sum(mano)
-        # Se ho un Asso e sballo (supero 21), l'Asso diventa 1
+        # If I have an Ace and I bust (go over 21), the Ace becomes 1
         if 1 in mano and punteggio <= 11:
-            # Qui stiamo assumendo che l'asso nella lista sia 1. 
-            # Nel blackjack standard spesso si conta 11 se non sballi.
-            # Per semplificare all'AI: se c'è un 1 e aggiungendo 10 non sballo, usalo come 11.
+            # Here we are assuming the ace in the list is 1. 
+            # In standard blackjack, it is often counted as 11 if you don't bust.
+            # To simplify for the AI: if there is a 1 and adding 10 doesn't bust, use it as 11.
             return punteggio + 10
         return punteggio
 
     def _ha_asso_usabile(self, mano):
-        # True se ho un asso che sta contando come 11
+        # True if I have an ace that is counting as 11
         punteggio = sum(mano)
         return 1 in mano and punteggio + 10 <= 21
 
     def reset(self):
         """
-        Inizia una nuova partita.
-        Restituisce: la tupla di stato iniziale.
+        Starts a new game.
+        Returns: the initial state tuple.
         """
         self.player_hand = [self._pesca_carta(), self._pesca_carta()]
         self.dealer_hand = [self._pesca_carta(), self._pesca_carta()]
@@ -36,53 +36,53 @@ class BlackjackEnv:
 
     def _get_obs(self):
         """
-        Restituisce la tupla (Stato) che vede l'AI.
+        Returns the tuple (State) that the AI sees.
         """
         punteggio_player = self._calcola_punteggio(self.player_hand)
-        dealer_card = self.dealer_hand[0] # L'AI vede solo la prima carta
+        dealer_card = self.dealer_hand[0] # The AI sees only the first card
         asso_usabile = self._ha_asso_usabile(self.player_hand)
         
-        # Esempio Tupla: (14, 10, False)
+        # Tuple Example: (14, 10, False)
         return (punteggio_player, dealer_card, asso_usabile)
 
     def step(self, azione):
         """
-        Esegue un'azione nel gioco.
-        Azione: 0 = Stai (Stand), 1 = Carta (Hit)
-        Restituisce: (nuovo_stato, ricompensa, fine_partita)
+        Executes an action in the game.
+        Action: 0 = Stand, 1 = Hit
+        Returns: (new_state, reward, game_over)
         """
-        # AZIONE 1: HIT (CARTA)
+        # ACTION 1: HIT (CARD)
         if azione == 1:
             self.player_hand.append(self._pesca_carta())
             punteggio = self._calcola_punteggio(self.player_hand)
             
             if punteggio > 21:
-                # SBALLATO: Fine gioco, Ricompensa negativa
+                # BUSTED: Game over, Negative reward
                 return self._get_obs(), -1, True
             else:
-                # GIOCO CONTINUA: Ricompensa 0 (per ora), Fine False
+                # GAME CONTINUES: Reward 0 (for now), Over False
                 return self._get_obs(), 0, False
 
-        # AZIONE 0: STAND (STAI)
+        # ACTION 0: STAND
         else:
-            # Tocca al Dealer
+            # Dealer's turn
             punteggio_player = self._calcola_punteggio(self.player_hand)
             punteggio_dealer = self._calcola_punteggio(self.dealer_hand)
             
-            # Il dealer tira finché ha meno di 17
+            # The dealer draws until they have at least 17
             while punteggio_dealer < 17:
                 self.dealer_hand.append(self._pesca_carta())
                 punteggio_dealer = self._calcola_punteggio(self.dealer_hand)
             
-            # CALCOLO VINCITORE
+            # WINNER CALCULATION
             reward = 0
-            if punteggio_dealer > 21: # Dealer sballa
+            if punteggio_dealer > 21: # Dealer busts
                 reward = 1
-            elif punteggio_dealer > punteggio_player: # Dealer vince
+            elif punteggio_dealer > punteggio_player: # Dealer wins
                 reward = -1
-            elif punteggio_dealer < punteggio_player: # Player vince
+            elif punteggio_dealer < punteggio_player: # Player wins
                 reward = 1
-            else: # Pareggio
+            else: # Tie
                 reward = 0
                 
             return self._get_obs(), reward, True

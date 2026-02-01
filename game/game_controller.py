@@ -1,8 +1,8 @@
 import pygame
 import random
-import sys # Necessario per sys.exit() nelle funzioni in fondo
+import sys # Needed for sys.exit() in the functions at the bottom
 
-# Import non modificati
+# Unmodified imports
 from model.playerNN import Player
 from model.dealer import Dealer
 from game.game_logic import (
@@ -30,15 +30,15 @@ class GameController:
         num = 4
         self.players = [] # reset list
 
-        # --- GIOCATORE UMANO ---
-        # *** Importante: get_player_name() deve ritornare un oggetto Player, non una lista ***
+        # --- HUMAN PLAYER ---
+        # *** Important: get_player_name() must return a Player object, not a list ***
         human = get_player_name() 
         self.players.append(human)
         human.is_human = True
 
-        # --- ALTRI 3 BOT ---
+        # --- OTHER 3 BOTS ---
         for i in range(1, 4):
-            # Assumendo che Player inizi con un bankroll predefinito > 0
+            # Assuming Player starts with a default bankroll > 0
             bot = Player(f"Player{i}") 
             self.players.append(bot)
         
@@ -46,34 +46,34 @@ class GameController:
 
         while not self.game_over:
             
-            # 1. CONTROLLO E RIMOZIONE DEI GIOCATORI IN BANCAROTTA
+            # 1. CHECK AND REMOVE BANKRUPT PLAYERS
             self.remove_bankrupt_players()
             
-            # Se rimane solo un giocatore (o nessuno) dopo il check, il gioco finisce.
-            # Se la lista è vuota, usciamo dal ciclo.
+            # If only one player (or none) remains after the check, the game ends.
+            # If the list is empty, we exit the loop.
             if len(self.players) < 1:
-                print("Tutti i giocatori sono falliti. Fine del gioco.")
+                print("All players are bankrupt. Game Over.")
                 self.game_over = True
-                continue # Passa al prossimo ciclo (che uscirà)
+                continue # Move to the next cycle (which will exit)
 
-            # 2. GESTIONE PUNTATE
-            # La funzione get_bet gestisce la puntata del giocatore umano (self.players[0])
-            # Nota: get_bet deve gestire il caso in cui il giocatore umano ha 0 soldi
+            # 2. BETTING MANAGEMENT
+            # The get_bet function handles the human player's bet (self.players[0])
+            # Note: get_bet must handle the case where the human player has 0 money
             get_bet(self.players) 
             
-            # Puntate dei BOT
-            # Iteriamo sulla lista aggiornata, escludendo il giocatore umano (che ha già puntato)
+            # BOT Bets
+            # Iterate over the updated list, excluding the human player (who already bet)
             for p in self.players[1:]:
-                # CONTROLLO SICUREZZA AGGIUNTIVO PER I BOT (dovrebbe essere sempre p.bank > 0 qui)
+                # ADDITIONAL SAFETY CHECK FOR BOTS (p.bank should always be > 0 here)
                 if p.bank <= 0:
-                    continue # salta il bot se è in bancarotta (anche se è stato rimosso)
+                    continue # skip the bot if bankrupt (even if it was removed)
 
                 bet = random.randint(1, min(100, int(p.bank)))
                 p.bet = bet
                 p.bank -= bet
 
-            # 3. LOGICA DEL ROUND
-            # nuovo mazzo
+            # 3. ROUND LOGIC
+            # new deck
             self.dealer = Dealer()
 
             deal_initial_cards(self.players, self.dealer)
@@ -82,34 +82,32 @@ class GameController:
 
             resolve_round(self.players, self.dealer)
             
-            # Passiamo un flag per mostrare il messaggio di uscita corretto se il gioco è finito
+            # Pass a flag to show the correct exit message if the game is over
             show_end_round(self.players, self.dealer, game_over=self.game_over or len(self.players) < 1)
 
-            # 4. PREPARAZIONE NUOVO ROUND
+            # 4. PREPARING NEW ROUND
             self.reset_for_new_round()
             self.check_final_winner()
             
     def remove_bankrupt_players(self):
-        """Rimuove i giocatori che hanno un bankroll di 0 o meno."""
+        """Removes players who have a bankroll of 0 or less."""
         active_players = []
         bankrupt_players = []
         
         for p in self.players:
             if p.bank <= 0:
                 bankrupt_players.append(p)
-                print(f"💰 {p.name} è in bancarotta (${p.bank}) ed è stato rimosso dal gioco.")
+                print(f"💰 {p.name} is bankrupt (${p.bank}) and has been removed from the game.")
             else:
                 active_players.append(p)
                 
         self.players = active_players
         
-        # Dopo la rimozione, potremmo dover riassegnare le coordinate ai giocatori rimasti
+        # After removal, we might need to reassign coordinates to remaining players
         self.fix_coordinates(len(self.players))
 
 
     def fix_coordinates(self, num):
-        # La logica di fix_coordinates è rimasta la stessa, ma ora
-        # viene chiamata con 'num' = len(self.players) aggiornato.
         players = self.players
         if num == 1:
             if players:
@@ -121,9 +119,6 @@ class GameController:
             players[0].y = HALF_HEIGHT + 150
             players[1].x = 400
             players[1].y = HALF_HEIGHT + 150
-
-        # ... (il resto della funzione fix_coordinates è invariato) ...
-        # Ho lasciato il resto della funzione fix_coordinates come fornita
 
         elif num == 3:
             players[0].x = 1000
@@ -174,42 +169,38 @@ class GameController:
         for p in self.players:
             p.resetState()
 
-    # vinci con 200$
+    # win with $200
     def check_final_winner(self):
         for p in self.players:
             if p.bank >= 200:
-                print(f"🎉 {p.name} ha vinto!")
+                print(f"🎉 {p.name} won!")
                 self.game_over = True
                 
-# --- FUNZIONI ESTERNE (modifiche in get_bet) ---
-
-# ... show_start_screen, show_instructions, get_player_name (invariate) ...
-
 def show_start_screen():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Welcome")
 
-    # sfondo
+    # background
     screen.blit(POKER_BACKGROUND, (0, 0))
 
-    # Carica il logo
+    # Load the logo
     title_logo = pygame.image.load("Resources/Icons/logo.png")
 
-    #  Definisci le nuove dimensioni 
+    # Define new dimensions 
     new_width = title_logo.get_width() // 2
     new_height = title_logo.get_height() // 2
 
-    # Scala l'immagine 
+    # Scale the image 
     title_logo = pygame.transform.smoothscale(title_logo, (new_width, new_height))
 
-    # Aggiorna le variabili delle dimensioni per il calcolo del centraggio
+    # Update dimension variables for centering calculation
     logo_w = title_logo.get_width()
     logo_h = title_logo.get_height()
 
-    # Disegna il logo
+    # Draw the logo
     screen.blit(title_logo, (HALF_WIDTH - logo_w // 2, HALF_HEIGHT - logo_h // 2 - 25))
 
-    # testo "premi spazio"
+    # "press space" text
     draw_text(screen,"PRESS SPACE TO CONTINUE",FONT_SUBTITLE,WHITE,HALF_WIDTH,HALF_HEIGHT + 100)
 
     pygame.display.update()
@@ -220,7 +211,7 @@ def show_instructions():
     pygame.display.set_caption("How to Play")
     screen.blit(POKER_BACKGROUND, (0, 0))
 
-    # TITOLI E REGOLE — STILE ORIGINALE
+    # TITLES AND RULES — ORIGINAL STYLE
     draw_text(screen, "Goal of the Game:", FONT_SUBTITLE, ORANGE, HALF_WIDTH, 50)
     draw_text(screen,
               "--> To get the closest to 21 without going over in order for you to make money.",
@@ -271,11 +262,11 @@ def get_player_name():
     name_confirmed = False
 
     while not name_confirmed:
-        # SFONDO
+        # BACKGROUND
         screen.blit(POKER_BACKGROUND, (0, 0))
 
         draw_text(screen,f"Enter your name:",FONT_BOLD,ORANGE,HALF_WIDTH,HALF_HEIGHT - 50)
-        # NOME INSERITO
+        # ENTERED NAME
         draw_text(screen,name,FONT_BOLD,WHITE,HALF_WIDTH,HALF_HEIGHT)
 
         footer = "PRESS SPACE TO CONTINUE"
@@ -283,10 +274,10 @@ def get_player_name():
         draw_text(screen,footer,FONT_BOLD,ORANGE,HALF_WIDTH,HALF_HEIGHT + 50)
         pygame.display.update()
 
-        # GESTIONE EVENTI
+        # EVENT HANDLING
         for event in pygame.event.get():
 
-            # CHIUSURA FINESTRA
+            # WINDOW CLOSING
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
@@ -296,19 +287,19 @@ def get_player_name():
                 pygame.quit()
                 sys.exit()
 
-            # INSERIMENTO CARATTERI
+            # CHARACTER INSERTION
             if event.type == pygame.KEYDOWN:
                 key = pygame.key.name(event.key)
 
-                # aggiungi carattere se valido e lunghezza < 9
+                # add character if valid and length < 9
                 if key in valid_chars and len(name) < 9:
                         name += key
 
-                # cancella tutto
+                # delete all
                 elif event.key == pygame.K_BACKSPACE:
                     name = ""
 
-                # conferma nome con SPACE
+                # confirm name with SPACE
                 elif event.key == pygame.K_SPACE and len(name) > 0:
                     name_confirmed = True
 
@@ -321,8 +312,8 @@ def get_bet(players):
 
     valid_nums = "0123456789"
     
-    # Prende il primo giocatore, che si presume essere l'umano.
-    # Se la lista è vuota qui, si avrà un IndexError, ma è gestito nel GameController.start().
+    # Takes the first player, assumed to be the human.
+    # If the list is empty here, an IndexError will occur, but it is handled in GameController.start().
     p = players[0] 
 
     bet = ""
@@ -330,7 +321,7 @@ def get_bet(players):
     valid_bet = True
 
     if p.bank <= 0:
-        print(f"ATTENZIONE: {p.name} è in bancarotta.")
+        print(f"WARNING: {p.name} is bankrupt.")
         pass 
 
     while True:
@@ -344,8 +335,8 @@ def get_bet(players):
         draw_text(screen, footer, FONT_BOLD, ORANGE, HALF_WIDTH, HALF_HEIGHT + 50)
 
         if not valid_bet:
-            # Messaggio per puntata non valida (es. troppo alta o zero)
-            draw_text(screen, "PUNTATA NON VALIDA (Max $100 e Max Bankroll)",
+            # Message for invalid bet (e.g., too high or zero)
+            draw_text(screen, "INVALID BET (Max $100 and Max Bankroll)",
                               FONT_BOLD, RED, HALF_WIDTH, HALF_HEIGHT + 100)
 
         pygame.display.update()
@@ -363,38 +354,38 @@ def get_bet(players):
             if event.type == pygame.KEYDOWN:
                 key = pygame.key.name(event.key)
 
-                # numeri
+                # numbers
                 if key in valid_nums and len(bet) < 4:
                     bet += key
                     valid_bet = True
                     bet_value = None
 
-                # cancella
+                # delete
                 elif event.key == pygame.K_BACKSPACE:
                     bet = ""
                     valid_bet = True
 
-                # conferma
+                # confirm
                 elif event.key == pygame.K_SPACE:
 
-                    # NON permettere puntata vuota
+                    # DO NOT allow empty bet
                     if bet == "":
                             valid_bet = False
                             continue
 
                     bet_value = int(bet)
                     
-                    # Massima puntata è 100, e non può superare il bankroll.
+                    # Max bet is 100, and cannot exceed bankroll.
                     max_allowed_bet = min(100, p.bank)
 
-                    # minimo 1, massimo max_allowed_bet
+                    # minimum 1, maximum max_allowed_bet
                     if 1 <= bet_value <= max_allowed_bet:
                         p.bet = bet_value
                         p.bank -= bet_value
                         valid_bet = True
                         break
                     else:
-                        # La puntata non è valida (es. 0, > 100, o > bank)
+                        # The bet is invalid (e.g. 0, > 100, or > bank)
                         valid_bet = False
                         bet_value = None
 
@@ -408,7 +399,7 @@ def show_end_round(players, dealer, game_over=False):
 
     y = 100
 
-    # TITOLO
+    # TITLE
     draw_text(screen, "Results:", FONT_SUBTITLE, ORANGE, HALF_WIDTH, y)
     y += 60
 
@@ -418,7 +409,7 @@ def show_end_round(players, dealer, game_over=False):
 
     num = len(players)
 
-    # ---- RIGA 1: Max 3 giocatori ----
+    # ---- ROW 1: Max 3 players ----
     row1 = ""
     for i in range(min(3, num)):
         p = players[i]
@@ -431,7 +422,7 @@ def show_end_round(players, dealer, game_over=False):
 
     draw_text(screen, row1, FONT_NORMAL, ORANGE, HALF_WIDTH, y)
 
-    # ---- RIGA 2: solo se ci sono più di 3 giocatori ----
+    # ---- ROW 2: only if there are more than 3 players ----
     if num > 3:
         y += 50
         row2 = ""
@@ -445,7 +436,7 @@ def show_end_round(players, dealer, game_over=False):
 
         draw_text(screen, row2, FONT_NORMAL, ORANGE, HALF_WIDTH, y)
 
-    # ---- BANCA RIGA 1 ----
+    # ---- BANK ROW 1 ----
     y = 600
     bank1 = ""
     for i in range(min(3, num)):
@@ -458,7 +449,7 @@ def show_end_round(players, dealer, game_over=False):
 
     draw_text(screen, bank1, FONT_NORMAL, WHITE, HALF_WIDTH, y)
 
-    # ---- BANCA RIGA 2 ----
+    # ---- BANK ROW 2 ----
     if num > 3:
         y += 50
         bank2 = ""
@@ -471,13 +462,13 @@ def show_end_round(players, dealer, game_over=False):
 
         draw_text(screen, bank2, FONT_NORMAL, WHITE, HALF_WIDTH, y)
 
-    # MESSAGGIO FINALE
+    # FINAL MESSAGE
     footer = "PRESS SPACE TO EXIT" if game_over or num < 1 else "PRESS SPACE TO CONTINUE"
     draw_text(screen, footer, FONT_SUBTITLE, ORANGE, HALF_WIDTH, SCREEN_HEIGHT - 50)
 
     pygame.display.update()
 
-    # ATTESA INPUT
+    # WAIT FOR INPUT
     while True:
         for event in pygame.event.get():
 

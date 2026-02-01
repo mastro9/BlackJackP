@@ -59,7 +59,7 @@ class Dealer:
 
         for i, card in enumerate(self.hand):
 
-            # Se la carta è la seconda e NON è ancora rivelata →
+            # If the card is the second one and is NOT yet revealed ->
             if i == 1 and not self.revealed:
                 img = load_image("Resources/Cards/Back/red_back.png", (card_w, card_h))
             else:
@@ -71,7 +71,7 @@ class Dealer:
 
         draw_text(surface, "DEALER", FONT_NORMAL, WHITE, self.x, self.y + card_h * 0.75)
 
-        # disegna il mazzo
+        # draws the deck
         deck_x = 400 - card_w/2
         deck_y = 100 - card_h/2
 
@@ -81,5 +81,5 @@ class Dealer:
             deck_x += gap
     
     def reveal_all_cards(self):
-        """Segna che tutte le carte del dealer devono essere mostrate (nessuna coperta)."""
+        """Marks that all dealer cards must be shown (none hidden)."""
         self.revealed = True

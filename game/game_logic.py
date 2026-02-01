@@ -10,25 +10,25 @@ def draw_table(screen, dealer, players):
 
     dealer.drawHand(screen)
 
-    # --- AI MOD: Recuperiamo la carta scoperta del dealer ---
-    # La mano del dealer ha 2 carte, la prima è quella scoperta (di solito)
+    # --- AI MOD: Retrieve the dealer's face-up card ---
+    # The dealer's hand has 2 cards, the first is the face-up one (usually)
     dealer_up_card = dealer.hand[0] if dealer.hand else None
     for p in players:
-        # Passiamo la carta del dealer alla funzione di disegno
+        # Pass the dealer's card to the drawing function
         p.drawHand(screen, dealer_up_card)
-    # --- TIGER EYE (come nel gioco originale) ---
+    # --- TIGER EYE (as in the original game) ---
     tiger = pygame.image.load("Resources/Icons/tigerEye.png")
 
-    # riduzione a metà della dimensione
+    # reduction to half size
     tiger_w = round(tiger.get_width() * 0.5)
     tiger_h = round(tiger.get_height() * 0.5)
 
     tiger = pygame.transform.scale(tiger, (tiger_w, tiger_h))
 
-    # trasparenza per l'effetto "velato"
+    # transparency for the "veiled" effect
     tiger.set_alpha(60)
 
-    # centrato sul tavolo
+    # centered on the table
     screen.blit(tiger,(HALF_WIDTH - tiger_w / 2, HALF_HEIGHT - tiger_h / 2))
     pygame.display.update()
 
@@ -60,18 +60,18 @@ def play_turns(players, dealer):
             turn += 1
             continue
 
-        # evidenzia chi sta giocando
+        # highlights who is playing
         for p in players:
             p.currentTurn = (p == player)
 
         draw_table(screen, dealer, players)
 
-        #richiesta se hit o pass
+        # request if hit or pass
         if player.is_human:
             choice = player.askChoice()
         else:
             choice = player.autoChoice(dealer.hand[0].value)
-            pygame.time.wait(700)  # piccola pausa per vedere l’azione a schermo
+            pygame.time.wait(700)  # small pause to see the action on screen
 
         # HIT
         if choice == 1:
@@ -97,23 +97,23 @@ def play_turns(players, dealer):
 
 
 def resolve_round(players, dealer):
-    screen = pygame.display.get_surface() # Recupera la finestra attiva
+    screen = pygame.display.get_surface() # Retrieves the active window
     
-    # --- FASE 1: Dealer scopre la carta coperta ---
+    # --- PHASE 1: Dealer reveals the hidden card ---
     dealer.reveal_all_cards()
     draw_table(screen, dealer, players)
     pygame.time.delay(1000) 
 
-    # --- FASE 2: Dealer pesca fino a 16 ---
+    # --- PHASE 2: Dealer draws up to 16 ---
     while dealer.count <= 16:
         dealer.addCard() 
         draw_table(screen, dealer, players)
         pygame.time.delay(1000)
 
-    # --- FASE 3: Calcolo Vincite e Messaggi Grafici ---
-    startY = 250 # Punto di partenza per i messaggi a video
+    # --- PHASE 3: Winnings Calculation and Graphic Messages ---
+    startY = 250 # Starting point for on-screen messages
     
-    # Se il dealer sballa
+    # If the dealer busts
     if dealer.count > 21:
         draw_text(screen, "DEALER BUSTED!", FONT_SUBTITLE, RED, HALF_WIDTH, startY)
         pygame.display.update()
@@ -123,12 +123,12 @@ def resolve_round(players, dealer):
             if not p.bust:
                 p.applyBet(2)
                 p.resetBet()
-                # Messaggio individuale opzionale
+                # Optional individual message
                 startY += 40
                 draw_text(screen, f"{p.name} wins 2x bet!", FONT_NORMAL, WHITE, HALF_WIDTH, startY)
     
     else:
-        # Confronto normale (Logica della tua compareCounts)
+        # Normal comparison (Logic of your compareCounts)
         highest_count = max((p.count for p in players if not p.bust and not p.blackjack), default=0)
 
         for p in players:
@@ -148,4 +148,4 @@ def resolve_round(players, dealer):
             p.resetBet()
 
     pygame.display.update()
-    pygame.time.delay(3000) # Pausa per leggere i risultati
+    pygame.time.delay(3000) # Pause to read the results

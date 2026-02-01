@@ -83,7 +83,7 @@ class Player:
         if self.count >= 17: return 0
         return 1
 
-    # --- NUOVA FUNZIONE: LOGICA AI ---
+    # --- LOGICA AI ---
     def get_ai_advice(self, dealer_card):
         player_sum = self.count
         d_val = dealer_card.value
